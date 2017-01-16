@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Windows.Data.Json;
 
 namespace Devices.Util.Extensions
@@ -41,6 +38,12 @@ namespace Devices.Util.Extensions
             else if (value is int || value is double || value is float || value is long ||
                 value is sbyte || value is short || value is uint || value is ulong || value is ushort)
                 return JsonValue.CreateNumberValue((dynamic)value);
+            else if (value is Enum)
+            {
+                return JsonValue.CreateStringValue(Enum.GetName(value.GetType(), value));
+            }
+            else if (value is IJsonValue)
+                return value as IJsonValue;
             else if (value is IEnumerable)
             {
                 JsonArray array = new JsonArray();
