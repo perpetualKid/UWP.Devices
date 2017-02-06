@@ -5,7 +5,7 @@ using Devices.Util;
 using Devices.Util.Extensions;
 using Windows.Data.Json;
 
-namespace Devices.Controllable
+namespace Devices.Components
 {
     public class MessageContainer
     {
@@ -26,12 +26,13 @@ namespace Devices.Controllable
         {
             get { return dataObject.GetNamedString(nameof(FixedPropertyNames.Target)); }
         }
+
         public string Action
         {
             get { return dataObject.GetNamedString(nameof(FixedPropertyNames.Action)); }
         }
 
-        public ControllableComponent Origin { get; private set; }
+        public ComponentBase Origin { get; private set; }
 
         public StringJsonCollection Parameters { get { return parameters; } }
 
@@ -55,16 +56,21 @@ namespace Devices.Controllable
             dataObject.AddMultiPartValue(name, value);
         }
 
+        public void ClearValue(string name)
+        {
+            dataObject.Remove(name);
+        }
+
         #endregion
 
         #region .ctor
-        private MessageContainer(Guid sessionId, ControllableComponent origin)
+        private MessageContainer(Guid sessionId, ComponentBase origin)
         {
             this.SessionId = sessionId;
             this.Origin = origin;
         }
 
-        public MessageContainer(Guid sessionId, ControllableComponent origin, string[] data) : this(sessionId, origin)
+        public MessageContainer(Guid sessionId, ComponentBase origin, string[] data) : this(sessionId, origin)
         {
             this.dataObject = new JsonObject();
             data = ResolveParameters(data);
@@ -99,7 +105,7 @@ namespace Devices.Controllable
             return result.ToArray();
         }
 
-        public MessageContainer(Guid sessionId, ControllableComponent origin, JsonObject data) : this(sessionId, origin)
+        public MessageContainer(Guid sessionId, ComponentBase origin, JsonObject data) : this(sessionId, origin)
         {
             this.dataObject = data;
             if (data.ContainsKey(nameof(FixedPropertyNames.Parameters)))

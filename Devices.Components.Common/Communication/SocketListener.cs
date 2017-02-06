@@ -1,15 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Devices.Communication;
 using Devices.Communication.Sockets;
-using Devices.Controllable;
 
 namespace Devices.Components.Common.Communication
 {
-    public class SocketListener : CommunicationControllable
+    public class SocketListener : CommunicationComponentBase
     {
         private int port;
         private DataFormat dataFormat = DataFormat.Text;
@@ -39,47 +35,30 @@ namespace Devices.Components.Common.Communication
         private async void Server_OnMessageReceived(object sender, MessageReceivedEventArgs e)
         {
             if (e is StringMessageArgs)
-                await HandleInput(new MessageContainer(e.SessionId, this, (e as StringMessageArgs).Parameters));
-            else if (e is JsonMessageArgs)
-                await HandleInput(new MessageContainer(e.SessionId, this, (e as JsonMessageArgs).Json));
-        }
-
-        protected override async Task ComponentHelp(MessageContainer data)
-        {
-            data.AddMultiPartValue("Help", "LISTENER HELP : Shows this help screen.");
-            data.AddMultiPartValue("Help", "LISTENER DATAFORMAT : Returns the data format this channel uses.");
-            data.AddMultiPartValue("Help", "LISTENER PORT : Returns the port number for this channel.");
-            await HandleOutput(data).ConfigureAwait(false);
-        }
-
-
-        protected override async Task ProcessCommand(MessageContainer data)
-        {
-            switch (data.ResolveParameter(nameof(MessageContainer.FixedPropertyNames.Action), 1).ToUpperInvariant())
             {
-                case "HELP":
-                    await ComponentHelp(data).ConfigureAwait(false);
-                    break;
-                case "FORMAT":
-                case "DATAFORMAT":
-                    await ListenerGetDataFormat(data).ConfigureAwait(false);
-                    break;
-                case "PORT":
-                    await ListenerGetPort(data).ConfigureAwait(false);
-                    break;
+                await ComponentHandler.HandleInput(new MessageContainer(e.SessionId, this, (e as StringMessageArgs).Parameters));
+            }
+            else if (e is JsonMessageArgs)
+            {
+                await ComponentHandler.HandleInput(new MessageContainer(e.SessionId, this, (e as JsonMessageArgs).Json));
             }
         }
 
+        [Action("DataFormat")]
+        [Action("Format")]
+        [ActionHelp("Returns the data format this channel uses.")]
         private async Task ListenerGetDataFormat(MessageContainer data)
         {
             data.AddValue("DataFormat", this.dataFormat.ToString());
-            await HandleOutput(data).ConfigureAwait(false);
+            await ComponentHandler.HandleOutput(data).ConfigureAwait(false);
         }
 
+        [Action("Port")]
+        [ActionHelp("Returns the port number for this channel.")]
         private async Task ListenerGetPort(MessageContainer data)
         {
             data.AddValue("Port", this.port);
-            await HandleOutput(data).ConfigureAwait(false);
+            await ComponentHandler.HandleOutput(data).ConfigureAwait(false);
         }
 
         public override async Task Respond(MessageContainer data)

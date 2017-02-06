@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Devices.Controllable
+namespace Devices.Components
 {
-    public abstract class StorageControllable : ControllableComponent
+    public abstract class StorageComponentBase: ComponentBase
     {
-        public StorageControllable(string componentName) : base(componentName)
+        public StorageComponentBase(string componentName) : base(componentName)
         {
         }
 

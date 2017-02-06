@@ -4,16 +4,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Devices.Controllable
+namespace Devices.Components
 {
-    public abstract class CommunicationControllable : ControllableComponent
+    public abstract class CommunicationComponentBase: ComponentBase
     {
-        public CommunicationControllable(string componentName) : base(componentName)
+        public CommunicationComponentBase(string componentName) : base(componentName)
         {
         }
 
         public abstract Task Respond(MessageContainer data);
 
         public abstract Task CloseChannel(Guid sessionId);
+
     }
 }

@@ -116,9 +116,9 @@
       <Project>{4d8acbe7-0837-4dad-a6ba-37de7bcea517}</Project>
       <Name>Devices.Communication</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Devices.Controllable\Devices.Controllable.csproj">
-      <Project>{8ad633bd-0b47-47b9-8ff3-b92c08b6eb07}</Project>
-      <Name>Devices.Controllable</Name>
+    <ProjectReference Include="..\Devices.Components.Base\Devices.Components.Base.csproj">
+      <Project>{39abe250-6554-4086-98d9-0d36903de939}</Project>
+      <Name>Devices.Components.Base</Name>
     </ProjectReference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
