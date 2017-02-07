@@ -108,6 +108,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Communication\SocketListener.cs" />
+    <Compile Include="Media\CameraComponent.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Properties\Devices.Components.Common.rd.xml" />
   </ItemGroup>
@@ -119,6 +120,10 @@
     <ProjectReference Include="..\Devices.Components.Base\Devices.Components.Base.csproj">
       <Project>{39abe250-6554-4086-98d9-0d36903de939}</Project>
       <Name>Devices.Components.Base</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Devices.Util\Devices.Util.csproj">
+      <Project>{E0B70271-C5F3-4BEB-B30E-45536A296387}</Project>
+      <Name>Devices.Util</Name>
     </ProjectReference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">

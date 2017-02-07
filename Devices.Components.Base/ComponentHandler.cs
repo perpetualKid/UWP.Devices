@@ -62,11 +62,13 @@ namespace Devices.Components
                 if (instance.commandHandlers.TryGetValue(action, out actionHandler))
                     try
                     {
-                        await actionHandler?.Invoke(data);
+                        await (actionHandler?.Invoke(data)).ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
                         Debug.WriteLine(data.Target, ex.Message + "::" + ex.StackTrace);
+                        data.AddValue("Error", ex.Message);
+                        await HandleOutput(data).ConfigureAwait(false);
                     }
                 else
                 {
@@ -91,6 +93,7 @@ namespace Devices.Components
 
         #endregion
 
+        #region delegate setup
         private static void SetupCommandHandler(ComponentBase instance)
         {
             foreach (MethodInfo method in instance.GetType().GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy))
@@ -112,5 +115,6 @@ namespace Devices.Components
         {
             return (ComponentActionDelegate)methodInfo.CreateDelegate(typeof(ComponentActionDelegate), instance);
         }
+        #endregion
     }
 }
