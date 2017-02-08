@@ -139,23 +139,14 @@ namespace Devices.Components.Common.Media
                     .ThenBy(subType => subType.Subtype)
                     .ThenByDescending(resolution =>
                     {
-                        if (resolution is VideoEncodingProperties)
-                        {
-                            return ((VideoEncodingProperties)resolution).Width * ((VideoEncodingProperties)resolution).Height;
-                        }
-                        if (resolution is ImageEncodingProperties)
-                        {
-                            return ((ImageEncodingProperties)resolution).Width * ((ImageEncodingProperties)resolution).Height;
-                        }
-                        else
-                            return (uint)0;
+                        return (resolution is VideoEncodingProperties ? ((VideoEncodingProperties)resolution).Width * ((VideoEncodingProperties)resolution).Height :
+                            resolution is ImageEncodingProperties ? ((ImageEncodingProperties)resolution).Width * ((ImageEncodingProperties)resolution).Height :
+                            (uint)0);
                     })
                     .ThenByDescending(frameRate =>
                     {
-                        if (frameRate is VideoEncodingProperties)
-                            return ((VideoEncodingProperties)frameRate).FrameRate.Numerator / ((VideoEncodingProperties)frameRate).FrameRate.Denominator;
-                        else
-                            return 0.0;
+                        return (frameRate is VideoEncodingProperties ? 
+                            ((VideoEncodingProperties)frameRate).FrameRate.Numerator / ((VideoEncodingProperties)frameRate).FrameRate.Denominator : 0.0);
                     });
                 return supportedFormats;
             }).ConfigureAwait(false);
