@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Devices.Util.Extensions;
 using Windows.Data.Json;
+using Windows.Devices.Enumeration;
 using Windows.Media.Capture;
 using Windows.Media.MediaProperties;
 using Windows.Storage.Streams;
@@ -221,6 +222,13 @@ namespace Devices.Components.Common.Media
                 properties.AddValue(nameof(imageProperties.Width), imageProperties.Width);
             }
             return properties;
+        }
+        #endregion
+
+        #region public static helpers
+        public static async Task<DeviceInformationCollection> GetAllVideoDevices()
+        {
+            return await DeviceInformation.FindAllAsync(DeviceClass.VideoCapture).AsTask<DeviceInformationCollection>().ConfigureAwait(false);
         }
         #endregion
     }

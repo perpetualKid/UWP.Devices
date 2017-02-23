@@ -24,8 +24,8 @@ namespace Devices.Components
         [ActionHelp("Returns a simple greeting message. Useful to test communication channel.")]
         private async Task SendHello(MessageContainer data)
         {
-            data.AddMultiPartValue("Hello", "HELLO. Great to see you here.");
-            data.AddMultiPartValue("Hello", "Use 'HELP + CRLF' command to get help.");
+            data.AddMultiPartValue("Hello", "Hello. Great to see you here.");
+            data.AddMultiPartValue("Hello", "Use 'Help + CRLF or Enter' command to get help.");
             await ComponentHandler.HandleOutput(data).ConfigureAwait(false);
         }
 

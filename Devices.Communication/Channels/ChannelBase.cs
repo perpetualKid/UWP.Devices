@@ -64,7 +64,7 @@ namespace Devices.Communication.Channels
                     this.ConnectionStatus = ConnectionStatus.Connected;
 
                     //Send a Hello message across
-                    await Parse("HELLO" + Environment.NewLine).ConfigureAwait(false);
+                    await Parse("Hello" + Environment.NewLine).ConfigureAwait(false);
 
                     loadOperation = dataReader.LoadAsync(bufferSize);
                     uint bytesAvailable = await loadOperation.AsTask(cancellationToken).ConfigureAwait(false);
@@ -98,7 +98,7 @@ namespace Devices.Communication.Channels
                 socketObject.ConnectionStatus = ConnectionStatus.Failed;
                 Debug.WriteLine(string.Format("Error receiving data: {0}", exception.Message));
             }
-            await socketObject.CloseSession(this.sessionId);
+            await socketObject.CloseSession(this.sessionId).ConfigureAwait(false);
             this.ConnectionStatus = ConnectionStatus.Disconnected;
             this.OnMessageReceived -= socketObject.Instance_OnMessageReceived;
         }
