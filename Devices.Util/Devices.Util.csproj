@@ -107,6 +107,7 @@
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Collections\RangeObservableCollection.cs" />
     <Compile Include="Extensions\EnumExtension.cs" />
     <Compile Include="Extensions\JsonExtension.cs" />
     <Compile Include="Extensions\SpinWaitExtension.cs" />
@@ -116,6 +117,7 @@
     <Compile Include="StringJsonCollection.cs" />
     <EmbeddedResource Include="Properties\Devices.Util.rd.xml" />
   </ItemGroup>
+  <ItemGroup />
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
   </PropertyGroup>

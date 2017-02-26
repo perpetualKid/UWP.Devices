@@ -68,7 +68,7 @@ namespace Devices.Components.Common.Media
         [ActionHelp("Returns current capture format.")]
         private async Task CameraComponentGetCurrentFormat(MessageContainer data)
         {
-            data.AddMultiPartValue("MediaFormat", MediaPropertiesToJson(await GetCurrentFormat()));
+            data.AddValue("MediaFormat", MediaPropertiesToJson(await GetCurrentFormat()));
             await ComponentHandler.HandleOutput(data).ConfigureAwait(false);
         }
 
@@ -82,7 +82,6 @@ namespace Devices.Components.Common.Media
             await Task.CompletedTask;
             uint width = uint.Parse(data.ResolveParameter("Width", 0));
             uint height = uint.Parse(data.ResolveParameter("Height", 1));
-            //VideoEncodingProperties mediaFormat = VideoEncodingProperties.CreateUncompressed("YUY2", width, height);
             VideoEncodingProperties mediaFormat = VideoEncodingProperties.CreateMpeg2();
             mediaFormat.Width = width;
             mediaFormat.Height = height;
@@ -103,7 +102,7 @@ namespace Devices.Components.Common.Media
             uint height;
             uint bitrate;
             string type = data.ResolveParameter("Type", 0);
-            string subtype = data.ResolveParameter("Subtype", 1);
+            string subtype = data.ResolveParameter("SubType", 1);
             if (!uint.TryParse(data.ResolveParameter("Width", 2), out width))
                 width = 0;
             if (!uint.TryParse(data.ResolveParameter("Height", 3), out height))
@@ -208,7 +207,7 @@ namespace Devices.Components.Common.Media
                 properties.AddValue(nameof(videoProperties.FrameRate), $"{videoProperties.FrameRate.Denominator}/{videoProperties.FrameRate.Numerator}");
                 properties.AddValue(nameof(videoProperties.Height), videoProperties.Height);
                 properties.AddValue(nameof(videoProperties.ProfileId), videoProperties.ProfileId);
-                properties.AddValue(nameof(videoProperties.PixelAspectRatio), $"{videoProperties.PixelAspectRatio.Denominator}/{videoProperties.PixelAspectRatio.Numerator}");
+                properties.AddValue(nameof(videoProperties.PixelAspectRatio), $"{videoProperties.PixelAspectRatio.Denominator}:{videoProperties.PixelAspectRatio.Numerator}");
                 properties.AddValue(nameof(videoProperties.Subtype), videoProperties.Subtype);
                 properties.AddValue(nameof(videoProperties.Type), videoProperties.Type);
                 properties.AddValue(nameof(videoProperties.Width), videoProperties.Width);

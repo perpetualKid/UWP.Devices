@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Devices.Communication.Channels;
-using Nito.AsyncEx;
 using Windows.Networking.Sockets;
 
 namespace Devices.Communication.Sockets
@@ -16,7 +15,6 @@ namespace Devices.Communication.Sockets
         private int port;
         private StreamSocketListener socketListener;
         private Dictionary<Guid, ChannelBase> activeSessions;
-        private AsyncReaderWriterLock activeSessionsLock;
 
         #region static
         public static SocketServer Instance(int port)
@@ -46,7 +44,6 @@ namespace Devices.Communication.Sockets
         {
             this.port = port;
             this.activeSessions = new Dictionary<Guid, ChannelBase>();
-            this.activeSessionsLock = new AsyncReaderWriterLock();
             cancellationTokenSource = new CancellationTokenSource();
         }
         #endregion
@@ -66,11 +63,8 @@ namespace Devices.Communication.Sockets
                 socketListener.Control.NoDelay = true;
                 socketListener.ConnectionReceived += async (streamSocketListener, streamSocketListenerConnectionReceivedEventArgs) =>
                 {
-                    using (IDisposable asyncLock = await activeSessionsLock.WriterLockAsync().ConfigureAwait(false))
-                    {
-                        ChannelBase channel = await ChannelFactory.BindChannelAsync(dataFormat, this, streamSocketListenerConnectionReceivedEventArgs.Socket).ConfigureAwait(false);
-                        activeSessions.Add(channel.SessionId, channel);
-                    }
+                    ChannelBase channel = await ChannelFactory.BindChannelAsync(dataFormat, this, streamSocketListenerConnectionReceivedEventArgs.Socket).ConfigureAwait(false);
+                    activeSessions.Add(channel.SessionId, channel);
                 };
                 await socketListener.BindServiceNameAsync(port.ToString()).AsTask().ConfigureAwait(false);
                 this.ConnectionStatus = ConnectionStatus.Listening;
@@ -99,13 +93,9 @@ namespace Devices.Communication.Sockets
         public override async Task Send(Guid sessionId, object data)
         {
             ChannelBase session;
-            using (IDisposable asyncLock = await activeSessionsLock.ReaderLockAsync().ConfigureAwait(false))
+            if (activeSessions.TryGetValue(sessionId, out session))
             {
-
-                if (activeSessions.TryGetValue(sessionId, out session))
-                {
-                    await session.Send(data).ConfigureAwait(false);
-                }
+                await session.Send(data).ConfigureAwait(false);
             }
         }
 
@@ -117,14 +107,10 @@ namespace Devices.Communication.Sockets
         public override async Task CloseSession(Guid sessionId)
         {
             ChannelBase session;
-            using (IDisposable asyncLock = await activeSessionsLock.WriterLockAsync().ConfigureAwait(false))
+            if (activeSessions.TryGetValue(sessionId, out session))
             {
-
-                if (activeSessions.TryGetValue(sessionId, out session))
-                {
-                    activeSessions.Remove(sessionId);
-                    await session.Close().ConfigureAwait(false);
-                }
+                activeSessions.Remove(sessionId);
+                await session.Close().ConfigureAwait(false);
             }
         }
 

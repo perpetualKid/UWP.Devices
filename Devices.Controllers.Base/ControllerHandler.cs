@@ -102,6 +102,11 @@ namespace Devices.Controllers.Base
         #region ConnectionHandler
         public static ConnectionHandler Connection { get; set; }
 
+        public static bool Connected
+        {
+            get { return Connection != null && Connection.ConnectionStatus == ConnectionStatus.Connected; }
+        }
+
         public static async Task<bool> InitializeConnection(string host, string port)
         {
             return await InitializeConnection(host, port, DataFormat.Json).ConfigureAwait(false);
