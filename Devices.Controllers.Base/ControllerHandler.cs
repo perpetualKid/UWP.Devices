@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -12,6 +13,8 @@ namespace Devices.Controllers.Base
         internal static Dictionary<string, ControllerBase> registeredControllers = new Dictionary<string, ControllerBase>();
         private static Dictionary<string, ControllerActionDelegate> catchAllActions = new Dictionary<string, ControllerActionDelegate>();
 
+        internal static event EventHandler OnConnectionUpdated;
+
         static ControllerHandler()
         {
         }
@@ -19,7 +22,7 @@ namespace Devices.Controllers.Base
         public static async Task<ControllerBase> RegisterController(ControllerBase controller)
         {
             List<Task> registerTasks = new List<Task>();
-            registeredControllers.Add(controller.QualifiedName, controller);
+            registeredControllers.Add(controller.ControllerName.ToUpperInvariant(), controller);
             registerTasks.Add(controller.InitializeDefaults());
             registerTasks.Add(Task.Run(() => SetupActionHandler(controller)));
             await Task.WhenAll(registerTasks.ToArray()).ConfigureAwait(false);
@@ -28,12 +31,12 @@ namespace Devices.Controllers.Base
 
         public static Task UnregisterController(ControllerBase controller)
         {
-            if (registeredControllers.ContainsKey(controller.QualifiedName))
+            if (registeredControllers.ContainsKey(controller.ControllerName))
             {
-                registeredControllers.Remove(controller.QualifiedName);
+                registeredControllers.Remove(controller.ControllerName);
             }
-            if (catchAllActions.ContainsKey(controller.QualifiedName))
-                catchAllActions.Remove(controller.QualifiedName);
+            if (catchAllActions.ContainsKey(controller.ControllerName))
+                catchAllActions.Remove(controller.ControllerName);
             return Task.CompletedTask;
         }
 
@@ -52,17 +55,12 @@ namespace Devices.Controllers.Base
                 actions.Add(actionHandler.Invoke(data));
 
             string sender = (data.ContainsKey(nameof(FixedNames.Sender)) ? data.GetNamedString(nameof(FixedNames.Sender)) : string.Empty).ToUpperInvariant();
-            string target = (data.ContainsKey(nameof(FixedNames.Target)) ? data.GetNamedString(nameof(FixedNames.Target)) : string.Empty).ToUpperInvariant();
             string action = (data.ContainsKey(nameof(FixedNames.Action)) ? data.GetNamedString(nameof(FixedNames.Action)) : string.Empty).ToUpperInvariant();
             if (registeredControllers.ContainsKey(sender))
             {
                 ControllerBase targetController = registeredControllers[sender];
-                if (targetController.actionHandlers.ContainsKey(target))
-                    actions.Add(targetController.actionHandlers[target].Invoke(data));
-                target += "." + action;
-                if (targetController.actionHandlers.ContainsKey(target))
-                    actions.Add(targetController.actionHandlers[target].Invoke(data));
-                target += "." + action;
+                if (targetController.actionHandlers.ContainsKey(action))
+                    actions.Add(targetController.actionHandlers[action].Invoke(data));
             }
             await Task.WhenAll(actions).ConfigureAwait(false);
         }
@@ -77,20 +75,16 @@ namespace Devices.Controllers.Base
                 {
                     ControllerActionDelegate actionHandler = (ControllerActionDelegate)method.CreateDelegate(typeof(ControllerActionDelegate), instance);
 
-                    foreach (TargetActionAttribute targetAttribute in targetAttributes)
+                    foreach (TargetActionAttribute actionAttribute in targetAttributes)
                     {
-                        if (string.IsNullOrWhiteSpace(targetAttribute.Target))  //catch all
+                        if (actionAttribute.Actions == null || actionAttribute.Actions.Count() == 0) //catch all from certain target component
                         {
-                            catchAllActions.Add(instance.QualifiedName, actionHandler);
-                        }
-                        else if (targetAttribute.Actions.Count() == 0) //catch all from certain target component
-                        {
-                            instance.actionHandlers.Add(targetAttribute.Target.ToUpperInvariant(), actionHandler);
+                            catchAllActions.Add(instance.controllerName.ToUpperInvariant(), actionHandler);
                         }
                         else //catch dedicated target/method(s)
                         { 
-                            foreach (string action in targetAttribute.Actions)
-                                instance.actionHandlers.Add($"{targetAttribute.Target.ToUpperInvariant()}.{action.ToUpperInvariant()}", actionHandler);
+                            foreach (string action in actionAttribute.Actions)
+                                instance.actionHandlers.Add($"{action.ToUpperInvariant()}", actionHandler);
                         }
                     }
                 }
@@ -100,12 +94,18 @@ namespace Devices.Controllers.Base
         #endregion
 
         #region ConnectionHandler
-        public static ConnectionHandler Connection { get; set; }
+        internal static ConnectionHandler Connection
+        {
+            get;
+            set;
+        }
 
         public static bool Connected
         {
             get { return Connection != null && Connection.ConnectionStatus == ConnectionStatus.Connected; }
         }
+
+        public static ConnectionStatus ConnectionStatus { get { return (Connection == null ? ConnectionStatus.Disconnected : Connection.ConnectionStatus); } }
 
         public static async Task<bool> InitializeConnection(string host, string port)
         {
@@ -115,8 +115,26 @@ namespace Devices.Controllers.Base
         public static async Task<bool> InitializeConnection(string host, string port, DataFormat format)
         {
             Connection = new ConnectionHandler();
+            Connection.OnConnectionStatusChanged += OnConnectionStatusChanged;
             return await Connection.Connect(host, port, format).ConfigureAwait(false);
         }
+
+        public static event EventHandler<ConnectionStatusChangedEventArgs> OnConnectionStatusChanged;
+
+        public static async Task Send(ControllerBase sender, JsonObject data)
+        {
+            await Connection.Send(sender, data).ConfigureAwait(false);
+        }
+
+        public static async Task Send(ControllerBase sender, string action)
+        {
+            await Connection.Send(sender, action).ConfigureAwait(false);
+        }
+        public static async Task Send(string sender, JsonObject data)
+        {
+            await Connection.Send(sender, data).ConfigureAwait(false);
+        }
+
         #endregion
 
     }

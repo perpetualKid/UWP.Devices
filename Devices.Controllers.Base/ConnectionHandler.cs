@@ -8,12 +8,16 @@ using Windows.Data.Json;
 
 namespace Devices.Controllers.Base
 {
-    public class ConnectionHandler
+    internal class ConnectionHandler
     {
 
         private SocketClient socketClient;
 
         public event EventHandler<ConnectionStatusChangedEventArgs> OnConnectionStatusChanged;
+
+        internal event EventHandler<JsonObject> OnJsonDataReceived;
+
+        internal event EventHandler<JsonObject> OnJsonDataSend;
 
         public ConnectionHandler()
         {
@@ -44,12 +48,32 @@ namespace Devices.Controllers.Base
             return socketClient.ConnectionStatus == ConnectionStatus.Connected;
         }
 
+        public async Task Send(ControllerBase sender, JsonObject data)
+        {
+            data.AddValue(nameof(FixedNames.Sender), sender.controllerName);
+            data.AddValue(nameof(FixedNames.Target), sender.targetComponentName);
+            OnJsonDataSend?.Invoke(sender, data);
+            if (socketClient.ConnectionStatus == ConnectionStatus.Connected)
+            {
+                await socketClient.Send(Guid.Empty, data).ConfigureAwait(false);
+            }
+        }
+
+        public async Task Send(ControllerBase sender, string action)
+        {
+            JsonObject data = new JsonObject();
+            data.AddValue(nameof(FixedNames.Action), action);
+
+            await Send(sender, data).ConfigureAwait(false);
+        }
+
         public async Task Send(string sender, JsonObject data)
         {
             data.AddValue(nameof(FixedNames.Sender), sender);
+            OnJsonDataSend?.Invoke(sender, data);
             if (socketClient.ConnectionStatus == ConnectionStatus.Connected)
             {
-                await socketClient.Send(Guid.Empty, data);
+                await socketClient.Send(Guid.Empty, data).ConfigureAwait(false);
             }
         }
 
@@ -58,6 +82,7 @@ namespace Devices.Controllers.Base
             if (e is JsonMessageArgs)
             {
                 JsonObject json = (e as JsonMessageArgs).Json;
+                OnJsonDataReceived?.Invoke(sender, json);
                 await ControllerHandler.HandleInput(json).ConfigureAwait(false);
             }
         }

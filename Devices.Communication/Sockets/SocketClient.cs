@@ -14,7 +14,6 @@ namespace Devices.Communication.Sockets
         private StreamSocket streamSocket;
         private ChannelBase channel;
 
-
         public SocketClient()
         {
             cancellationTokenSource = new CancellationTokenSource();

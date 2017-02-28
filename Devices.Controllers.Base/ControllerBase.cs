@@ -8,59 +8,35 @@ namespace Devices.Controllers.Base
     public abstract class ControllerBase
     {
         protected internal string controllerName;
-        protected internal ControllerBase parent;
-        private string fqControllerName;
+        protected internal string targetComponentName;
 
         internal Dictionary<string, ControllerActionDelegate> actionHandlers;
 
-        public ControllerBase(string controllerName)
+        public ControllerBase(string controllerName, string targetComponentName)
         {
             this.controllerName = controllerName;
+            this.targetComponentName = targetComponentName;
             actionHandlers = new Dictionary<string, ControllerActionDelegate>();
         }
 
-        public ControllerBase(string controllerName, ControllerBase parent) : this(controllerName)
-        {
-            this.parent = parent;
-        }
+        public string ControllerName { get { return this.controllerName; } }
+
+        public string TargetComponentName { get { return this.targetComponentName; } }
 
         protected internal async virtual Task InitializeDefaults()
         {
             await Task.CompletedTask.ConfigureAwait(false);
         }
 
-        public static async Task<T> GetNamedInstance<T>(string name) where T: ControllerBase
+        public static async Task<T> GetNamedInstance<T>(string controllerName, string targetComponentName) where T: ControllerBase
         {
-            ControllerBase controller = ControllerHandler.GetByName(name);
+            ControllerBase controller = ControllerHandler.GetByName(controllerName);
             if (null == controller)
             {
-                controller = (T)Activator.CreateInstance(typeof(T), name);
+                controller = (T)Activator.CreateInstance(typeof(T), controllerName, targetComponentName);
                 await ControllerHandler.RegisterController(controller).ConfigureAwait(false);
             }
             return controller as T;
         }
-
-        #region helpers
-        internal string QualifiedName
-        {
-            get
-            {
-                if (string.IsNullOrEmpty(fqControllerName))
-                {
-                    StringBuilder builder = new StringBuilder();
-                    ControllerBase controller = this;
-                    while (controller != null)
-                    {
-                        builder.Insert(0, controller.controllerName.ToUpperInvariant());
-                        builder.Insert(0, ".");
-                        controller = controller.parent;
-                    }
-                    fqControllerName = builder.Remove(0, 1).ToString();
-                }
-                return fqControllerName;
-            }
-        }
-        #endregion
-
     }
 }
