@@ -8,15 +8,20 @@ namespace Devices.Controllers.Base
 {
     public class DebugController: ControllerBase
     {
-        public event EventHandler<string> OnDataReceived;
+        public event EventHandler OnReceivedTextUpdated;
 
-        private StringBuilder textBuffer;
+        public event EventHandler OnSentTextUpdated;
+
+        private StringBuilder textSent;
+        private StringBuilder textReceived;
         private ConnectionHandler connection;
 
-        public DebugController(string name): base(name, string.Empty)
+        public DebugController(string controllerName, string targetComponentName): base(controllerName, targetComponentName)
         {
-            textBuffer = new StringBuilder();
+            textReceived = new StringBuilder();
+            textSent = new StringBuilder();
             ControllerHandler.OnConnectionUpdated += ControllerHandler_OnConnectionUpdated;
+            ControllerHandler_OnConnectionUpdated(this, new EventArgs());
         }
 
         private void ControllerHandler_OnConnectionUpdated(object sender, EventArgs e)
@@ -32,27 +37,45 @@ namespace Devices.Controllers.Base
                 ControllerHandler.Connection.OnJsonDataSend += Connection_OnJsonDataSend;
             }
             connection = ControllerHandler.Connection;
-
         }
 
         private void Connection_OnJsonDataSend(object sender, JsonObject e)
         {
+            textSent.Insert(0, e.Stringify() + Environment.NewLine);
+            OnSentTextUpdated?.Invoke(this, new EventArgs());
         }
 
         private void Connection_OnJsonDataReceived(object sender, JsonObject e)
         {
+            textReceived.Insert(0, e.Stringify() + Environment.NewLine);
+            OnReceivedTextUpdated?.Invoke(this, new EventArgs());
         }
 
-        public string Textbuffer
+        public string TextSent { get { return textSent.ToString(); } }
+
+        public string TextReceived { get { return textReceived.ToString(); } }
+
+        public void ClearSentBuffer()
         {
-            get { return textBuffer.ToString(); }
+            textSent.Clear();
+            OnSentTextUpdated?.Invoke(this, new EventArgs());
+        }
+
+        public void ClearReceivedBuffer()
+        {
+            textReceived.Clear();
+            OnReceivedTextUpdated?.Invoke(this, new EventArgs());
+        }
+
+        public void ClearBuffer()
+        {
+            ClearReceivedBuffer();
+            ClearSentBuffer();
         }
 
         [TargetAction()]
         protected Task DataReceived(JsonObject data)
         {
-            textBuffer.Insert(0, data.Stringify() + Environment.NewLine);
-            OnDataReceived?.Invoke(this, data.Stringify());
             return Task.CompletedTask;
         }
     }

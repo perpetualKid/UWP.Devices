@@ -14,6 +14,7 @@ namespace Devices.Controllers.Base
         private static Dictionary<string, ControllerActionDelegate> catchAllActions = new Dictionary<string, ControllerActionDelegate>();
 
         internal static event EventHandler OnConnectionUpdated;
+        private static ConnectionHandler connection;
 
         static ControllerHandler()
         {
@@ -96,8 +97,12 @@ namespace Devices.Controllers.Base
         #region ConnectionHandler
         internal static ConnectionHandler Connection
         {
-            get;
-            set;
+            get { return connection; }
+            set
+            {
+                connection = value;
+                OnConnectionUpdated?.Invoke(value, new EventArgs());
+            }
         }
 
         public static bool Connected
@@ -124,6 +129,11 @@ namespace Devices.Controllers.Base
         public static async Task Send(ControllerBase sender, JsonObject data)
         {
             await Connection.Send(sender, data).ConfigureAwait(false);
+        }
+
+        public static async Task Send(JsonObject data)
+        {
+            await Connection.Send(data).ConfigureAwait(false);
         }
 
         public static async Task Send(ControllerBase sender, string action)

@@ -63,14 +63,18 @@ namespace Devices.Controllers.Base
         {
             JsonObject data = new JsonObject();
             data.AddValue(nameof(FixedNames.Action), action);
-
             await Send(sender, data).ConfigureAwait(false);
         }
 
         public async Task Send(string sender, JsonObject data)
         {
             data.AddValue(nameof(FixedNames.Sender), sender);
-            OnJsonDataSend?.Invoke(sender, data);
+            await Send(data).ConfigureAwait(false);
+        }
+
+        public async Task Send(JsonObject data)
+        {
+            OnJsonDataSend?.Invoke(this, data);
             if (socketClient.ConnectionStatus == ConnectionStatus.Connected)
             {
                 await socketClient.Send(Guid.Empty, data).ConfigureAwait(false);
