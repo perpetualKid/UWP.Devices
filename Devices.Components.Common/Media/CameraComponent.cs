@@ -79,13 +79,21 @@ namespace Devices.Components.Common.Media
         [ActionHelp("Sets the current capture format")]
         private async Task CameraComponentSetCurrentFormat(MessageContainer data)
         {
-            await Task.CompletedTask;
-            uint width = uint.Parse(data.ResolveParameter("Width", 0));
-            uint height = uint.Parse(data.ResolveParameter("Height", 1));
-            VideoEncodingProperties mediaFormat = VideoEncodingProperties.CreateMpeg2();
-            mediaFormat.Width = width;
-            mediaFormat.Height = height;
-            await SetCurrentFormat(mediaFormat).ConfigureAwait(false);
+            uint width;
+            uint height;
+            uint bitrate;
+            string type = data.ResolveParameter("Type", 0);
+            string subtype = data.ResolveParameter("SubType", 1);
+            if (!uint.TryParse(data.ResolveParameter("Width", 2), out width))
+                width = 0;
+            if (!uint.TryParse(data.ResolveParameter("Height", 3), out height))
+                height = 0;
+            if (!uint.TryParse(data.ResolveParameter("BitRate", 4), out bitrate))
+                bitrate = 0;
+
+            var matchingFormat = (await GetSupportedMediaFormats(type, subtype, width, height, bitrate).ConfigureAwait(false)).FirstOrDefault();
+            if (null != matchingFormat)
+                await SetCurrentFormat(matchingFormat).ConfigureAwait(false);
         }
 
         [Action("ListFormats")]
@@ -157,7 +165,7 @@ namespace Devices.Components.Common.Media
             return await Task.Run(() => mediaCapture.VideoDeviceController.GetMediaStreamProperties(MediaStreamType.Photo)).ConfigureAwait(false) as VideoEncodingProperties;
         }
 
-        public async Task SetCurrentFormat(VideoEncodingProperties format)
+        public async Task SetCurrentFormat(IMediaEncodingProperties format)
         {
             await mediaCapture.VideoDeviceController.SetMediaStreamPropertiesAsync(MediaStreamType.Photo, format).AsTask().ConfigureAwait(false);
         }

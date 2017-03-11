@@ -124,6 +124,14 @@ namespace Devices.Controllers.Base
             return await Connection.Connect(host, port, format).ConfigureAwait(false);
         }
 
+        public static async Task Disconnect()
+        {
+            if (null != Connection)
+            {
+                await connection.Disconnect().ConfigureAwait(false);
+            }
+        }
+
         public static event EventHandler<ConnectionStatusChangedEventArgs> OnConnectionStatusChanged;
 
         public static async Task Send(ControllerBase sender, JsonObject data)
@@ -140,6 +148,7 @@ namespace Devices.Controllers.Base
         {
             await Connection.Send(sender, action).ConfigureAwait(false);
         }
+
         public static async Task Send(string sender, JsonObject data)
         {
             await Connection.Send(sender, data).ConfigureAwait(false);

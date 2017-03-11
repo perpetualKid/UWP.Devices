@@ -68,6 +68,7 @@ namespace Devices.Components
                     {
                         Debug.WriteLine(data.Target, ex.Message + "::" + ex.StackTrace);
                         data.AddValue("Error", ex.Message);
+                        data.AddValue("StackTrace", ex.StackTrace);
                         await HandleOutput(data).ConfigureAwait(false);
                     }
                 else

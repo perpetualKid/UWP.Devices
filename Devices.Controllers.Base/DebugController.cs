@@ -8,63 +8,96 @@ namespace Devices.Controllers.Base
 {
     public class DebugController: ControllerBase
     {
-        public event EventHandler OnReceivedTextUpdated;
+        public event EventHandler OnDataReceived;
+        public event EventHandler OnDataSent;
 
-        public event EventHandler OnSentTextUpdated;
-
-        private StringBuilder textSent;
-        private StringBuilder textReceived;
+        private StringBuilder dataSent;
+        private StringBuilder dataReceived;
         private ConnectionHandler connection;
+        private bool enabled;
+
+        private static DebugController instance;
 
         public DebugController(string controllerName, string targetComponentName): base(controllerName, targetComponentName)
         {
-            textReceived = new StringBuilder();
-            textSent = new StringBuilder();
+            dataReceived = new StringBuilder();
+            dataSent = new StringBuilder();
             ControllerHandler.OnConnectionUpdated += ControllerHandler_OnConnectionUpdated;
             ControllerHandler_OnConnectionUpdated(this, new EventArgs());
         }
 
+        public static DebugController Instance
+        {
+            get
+            {
+                if (null == instance)
+                {
+                    instance = new DebugController("DebugController", string.Empty);
+                    ControllerHandler.RegisterController(instance).ConfigureAwait(false);
+                }
+                return instance;
+            }
+        }
+
+        public bool Enabled
+        {
+            get { return this.enabled; }
+            set
+            {
+                this.enabled = value;
+                SubscribeDebugMessages();
+            }
+        }
+
         private void ControllerHandler_OnConnectionUpdated(object sender, EventArgs e)
+        {
+            connection = ControllerHandler.Connection;
+            SubscribeDebugMessages();
+        }
+
+        private void SubscribeDebugMessages()
         {
             if (connection != null)
             {
-                connection.OnJsonDataReceived -= Connection_OnJsonDataReceived;
-                connection.OnJsonDataSend -= Connection_OnJsonDataSend;
+                if (enabled)
+                {
+                    connection.OnJsonDataReceived += Connection_OnJsonDataReceived;
+                    connection.OnJsonDataSend += Connection_OnJsonDataSend;
+                }
+                else
+                {
+                    connection.OnJsonDataReceived -= Connection_OnJsonDataReceived;
+                    connection.OnJsonDataSend -= Connection_OnJsonDataSend;
+                }
             }
-            if (ControllerHandler.Connection != null)
-            {
-                ControllerHandler.Connection.OnJsonDataReceived += Connection_OnJsonDataReceived;
-                ControllerHandler.Connection.OnJsonDataSend += Connection_OnJsonDataSend;
-            }
-            connection = ControllerHandler.Connection;
         }
 
         private void Connection_OnJsonDataSend(object sender, JsonObject e)
         {
-            textSent.Insert(0, e.Stringify() + Environment.NewLine);
-            OnSentTextUpdated?.Invoke(this, new EventArgs());
+            dataSent.Insert(0, e.Stringify() + Environment.NewLine);
+            OnDataSent?.Invoke(this, new EventArgs());
         }
 
         private void Connection_OnJsonDataReceived(object sender, JsonObject e)
         {
-            textReceived.Insert(0, e.Stringify() + Environment.NewLine);
-            OnReceivedTextUpdated?.Invoke(this, new EventArgs());
+            dataReceived.Insert(0, e.Stringify() + Environment.NewLine);
+            OnDataReceived?.Invoke(this, new EventArgs());
         }
 
-        public string TextSent { get { return textSent.ToString(); } }
+        public string DataSent { get { return dataSent.ToString(); } }
 
-        public string TextReceived { get { return textReceived.ToString(); } }
+        public string DataReceived { get { return dataReceived.ToString(); } }
 
         public void ClearSentBuffer()
         {
-            textSent.Clear();
-            OnSentTextUpdated?.Invoke(this, new EventArgs());
+            dataSent.Clear();
+            OnDataSent?.Invoke(this, new EventArgs());
         }
 
         public void ClearReceivedBuffer()
         {
-            textReceived.Clear();
-            OnReceivedTextUpdated?.Invoke(this, new EventArgs());
+            dataReceived.Clear();
+            OnDataReceived?.Invoke(this, new EventArgs());
         }
 
         public void ClearBuffer()
@@ -73,10 +106,5 @@ namespace Devices.Controllers.Base
             ClearSentBuffer();
         }
 
-        [TargetAction()]
-        protected Task DataReceived(JsonObject data)
-        {
-            return Task.CompletedTask;
-        }
     }
 }

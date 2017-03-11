@@ -48,6 +48,14 @@ namespace Devices.Controllers.Base
             return socketClient.ConnectionStatus == ConnectionStatus.Connected;
         }
 
+        public async Task Disconnect()
+        {
+            if (socketClient.ConnectionStatus == ConnectionStatus.Connected)
+            {
+                await socketClient.Disconnect().ConfigureAwait(false);
+            }
+        }
+
         public async Task Send(ControllerBase sender, JsonObject data)
         {
             data.AddValue(nameof(FixedNames.Sender), sender.controllerName);
