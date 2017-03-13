@@ -26,13 +26,22 @@ namespace Devices.Controllers.Common
 
             public override string ToString()
             {
+                return ToLongString();
+            }
+
+            public string ToShortString()
+            {
                 return $"{Width}*{Height}, {Format}";
+            }
+
+            public string ToLongString()
+            {
+                return $"Resolution:{Width}*{Height}, CaptureFormat:{Format}, BitRate:{JsonFormat.GetNamedNumber("Bitrate")}, FrameRate:{JsonFormat.GetNamedString("FrameRate")}, PixelAspectRatio:{JsonFormat.GetNamedString("PixelAspectRatio")}";
             }
         }
 
         private ObservableCollection<BitmapImage> images;
         private BitmapImage currentImage;
-        private string currentFormat;
 
         private List<ImageFormat> supportedImageFormats;
 
@@ -61,15 +70,12 @@ namespace Devices.Controllers.Common
             return supportedImageFormats?.Select((formatJson) => formatJson.Format).Distinct() ?? new string[0];
         }
 
-        public IEnumerable<string> GetSupportedCaptureResolutions()
+        public IEnumerable<string> GetSupportedCaptureFormats(string resolution)
         {
             return supportedImageFormats?.
-                OrderByDescending(format => format.Width).
-                ThenBy(format => format.Height).
-                Select((imageFormat) =>
-            {
-                return $"{imageFormat.Width}*{imageFormat.Height}";
-            }).Distinct() ?? new string[0];
+                Where(format => (string.IsNullOrEmpty(resolution) ? true : $"{format.Width}*{format.Height}" == resolution)).
+                Select((formatJson) => formatJson.Format).
+                Distinct() ?? new string[0];
         }
 
         public IEnumerable<string> GetSupportedCaptureResolutions(string captureFormat)
@@ -88,21 +94,25 @@ namespace Devices.Controllers.Common
             return supportedImageFormats?.
                 Select((imageFormat) =>
                 {
-                    return $"Resolution:{imageFormat.Width}*{imageFormat.Height}, CaptureFormat:{imageFormat.Format}, BitRate:{imageFormat.JsonFormat.GetNamedNumber("Bitrate")}, FrameRate:{imageFormat.JsonFormat.GetNamedString("FrameRate")}, PixelAspectRatio:{imageFormat.JsonFormat.GetNamedString("PixelAspectRatio")}";
+                    return imageFormat.ToLongString();
                 })?? new string[0];
         }
 
-        public IEnumerable<string> GetSupportedFormatsFiltered(string subType, string resolution)
+        public IEnumerable<ImageFormat> GetSupportedFormatsFiltered(string subType, string resolution)
+        {
+            return supportedImageFormats?.
+                Where(format => (string.IsNullOrEmpty(subType) ? true : format.Format == subType)).
+                Where(format => (string.IsNullOrEmpty(resolution) ? true : $"{format.Width}*{format.Height}" == resolution)) ?? new List<ImageFormat>();
+        }
+
+        public ImageFormat? SelectFormat(string subType, string resolution, string bitrate)
         {
             return supportedImageFormats?.
                 Where(format => (string.IsNullOrEmpty(subType) ? true : format.Format == subType)).
                 Where(format => (string.IsNullOrEmpty(resolution) ? true : $"{format.Width}*{format.Height}" == resolution)).
-                Select((imageFormat) =>
-                {
-                    return $"Resolution:{imageFormat.Width}*{imageFormat.Height}, CaptureFormat:{imageFormat.Format}, BitRate:{imageFormat.JsonFormat.GetNamedNumber("Bitrate")}, FrameRate:{imageFormat.JsonFormat.GetNamedString("FrameRate")}, PixelAspectRatio:{imageFormat.JsonFormat.GetNamedString("PixelAspectRatio")}";
-                }) ?? new string[0];
+                Where(format => (string.IsNullOrEmpty(bitrate) ? true : format.JsonFormat.GetNamedNumber("Bitrate").ToString() == bitrate)).
+                FirstOrDefault();
         }
-
 
         public async Task CaptureDeviceImage()
         {
@@ -129,6 +139,18 @@ namespace Devices.Controllers.Common
             JsonObject imageCapture = new JsonObject();
             imageCapture.AddValue("Action", "GetCurrentFormat");
             await ControllerHandler.Send(this, imageCapture).ConfigureAwait(false);
+        }
+
+        public async Task SetCaptureFormat(ImageFormat imageFormat)
+        {
+            JsonObject imageFormatJson = new JsonObject();
+            imageFormatJson.AddValue("Action", "SetCurrentFormat");
+            imageFormatJson.AddValue("SubType", imageFormat.Format);
+            imageFormatJson.AddValue("Width", imageFormat.Width);
+            imageFormatJson.AddValue("Height", imageFormat.Height);
+            imageFormatJson.AddValue("BitRate", imageFormat.JsonFormat.GetNamedNumber("Bitrate"));
+
+            await ControllerHandler.Send(this, imageFormatJson).ConfigureAwait(false);
         }
 
         [TargetAction("GetCurrentFormat")]

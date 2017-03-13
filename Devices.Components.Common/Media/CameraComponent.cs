@@ -74,8 +74,11 @@ namespace Devices.Components.Common.Media
 
         [Action("SetCurrentFormat")]
         [Action("SetFormat")]
+        [ActionParameter("Type")]
+        [ActionParameter("SubType")]
         [ActionParameter("Width")]
         [ActionParameter("Height")]
+        [ActionParameter("BitRate")]
         [ActionHelp("Sets the current capture format")]
         private async Task CameraComponentSetCurrentFormat(MessageContainer data)
         {
