@@ -38,9 +38,15 @@ namespace Devices.Controllers.Common
             {
                 return $"Resolution:{Width}*{Height}, CaptureFormat:{Format}, BitRate:{JsonFormat.GetNamedNumber("Bitrate")}, FrameRate:{JsonFormat.GetNamedString("FrameRate")}, PixelAspectRatio:{JsonFormat.GetNamedString("PixelAspectRatio")}";
             }
+
+            public override bool Equals(object obj)
+            {
+                return (obj is ImageFormat) ? (this.JsonFormat.Stringify() == ((ImageFormat)obj).JsonFormat.Stringify()) : false;
+            }
         }
 
         private ObservableCollection<BitmapImage> images;
+        private ImageFormat? currentImageFormat;
         private BitmapImage currentImage;
 
         private List<ImageFormat> supportedImageFormats;
@@ -63,12 +69,9 @@ namespace Devices.Controllers.Common
 
         public List<ImageFormat> SupportedImageFormats { get { return this.supportedImageFormats; } }
 
-        public BitmapImage CurrentImage { get { return this.currentImage; } }
+        public ImageFormat? CurrentImageFormat { get { return this.currentImageFormat; } }
 
-        public IEnumerable<string> GetSupportedCaptureFormats()
-        {
-            return supportedImageFormats?.Select((formatJson) => formatJson.Format).Distinct() ?? new string[0];
-        }
+        public BitmapImage CurrentImage { get { return this.currentImage; } }
 
         public IEnumerable<string> GetSupportedCaptureFormats(string resolution)
         {
@@ -87,15 +90,6 @@ namespace Devices.Controllers.Common
                 {
                     return $"{imageFormat.Width}*{imageFormat.Height}";
                 }).Distinct() ?? new string[0];
-        }
-
-        public IEnumerable<string> GetAllSupportedFormats()
-        {
-            return supportedImageFormats?.
-                Select((imageFormat) =>
-                {
-                    return imageFormat.ToLongString();
-                })?? new string[0];
         }
 
         public IEnumerable<ImageFormat> GetSupportedFormatsFiltered(string subType, string resolution)
@@ -151,12 +145,14 @@ namespace Devices.Controllers.Common
             imageFormatJson.AddValue("BitRate", imageFormat.JsonFormat.GetNamedNumber("Bitrate"));
 
             await ControllerHandler.Send(this, imageFormatJson).ConfigureAwait(false);
+            currentImageFormat = imageFormat;
         }
 
         [TargetAction("GetCurrentFormat")]
         private Task GetCurrentFormatResponse(JsonObject data)
         {
-            OnCurrentFormatChanged?.Invoke(this, JsonFormatToImageFormat(data.GetNamedValue("MediaFormat")));
+            currentImageFormat = JsonFormatToImageFormat(data.GetNamedValue("MediaFormat"));
+            OnCurrentFormatChanged?.Invoke(this, currentImageFormat.Value);
             return Task.CompletedTask;
         }
 
