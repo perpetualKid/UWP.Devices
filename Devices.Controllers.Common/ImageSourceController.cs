@@ -43,6 +43,11 @@ namespace Devices.Controllers.Common
             {
                 return (obj is ImageFormat) ? (this.JsonFormat.Stringify() == ((ImageFormat)obj).JsonFormat.Stringify()) : false;
             }
+
+            public override int GetHashCode()
+            {
+                return this.JsonFormat.GetHashCode();
+            }
         }
 
         private ObservableCollection<BitmapImage> images;
