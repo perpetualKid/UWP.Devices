@@ -111,6 +111,7 @@
     <Compile Include="Extensions\EnumExtension.cs" />
     <Compile Include="Extensions\JsonExtension.cs" />
     <Compile Include="Extensions\SpinWaitExtension.cs" />
+    <Compile Include="Parser\JsonObjectPrettyPrint.cs" />
     <Compile Include="Parser\JsonStreamParser.cs" />
     <Compile Include="Parser\TextStreamParser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -6,7 +6,7 @@ using Windows.Data.Json;
 
 namespace Devices.Controllers.Base
 {
-    public class DebugController: ControllerBase
+    public class DebugHandler
     {
         public event EventHandler OnDataReceived;
         public event EventHandler OnDataSent;
@@ -16,9 +16,10 @@ namespace Devices.Controllers.Base
         private ConnectionHandler connection;
         private bool enabled;
 
-        private static DebugController instance;
+        //http://www.laserbrain.se/2015/11/async-singleton-initialization/
+        private static readonly Lazy<DebugHandler> instance = new Lazy<DebugHandler>(CreateDebugHandler);
 
-        public DebugController(string controllerName, string targetComponentName): base(controllerName, targetComponentName)
+        private DebugHandler()
         {
             dataReceived = new StringBuilder();
             dataSent = new StringBuilder();
@@ -26,17 +27,14 @@ namespace Devices.Controllers.Base
             ControllerHandler_OnConnectionUpdated(this, new EventArgs());
         }
 
-        public static DebugController Instance
+        private static DebugHandler CreateDebugHandler()
         {
-            get
-            {
-                if (null == instance)
-                {
-                    instance = new DebugController("DebugController", string.Empty);
-                    ControllerHandler.RegisterController(instance).ConfigureAwait(false);
-                }
-                return instance;
-            }
+            return new DebugHandler();
+        }
+
+        public static DebugHandler Instance
+        {
+            get { return instance.Value; }
         }
 
         public bool Enabled

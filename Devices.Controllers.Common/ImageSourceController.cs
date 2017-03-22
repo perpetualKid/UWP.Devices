@@ -113,6 +113,14 @@ namespace Devices.Controllers.Common
                 FirstOrDefault();
         }
 
+        public async Task InitializeFormats()
+        {
+            if (supportedImageFormats?.Count == 0 || !currentImageFormat.HasValue)
+            {
+                await Task.WhenAll(RequestCurrentFormat(), RequestSupportedFormats()).ConfigureAwait(false);
+            }
+        }
+
         public async Task CaptureDeviceImage()
         {
             JsonObject imageCapture = new JsonObject();
