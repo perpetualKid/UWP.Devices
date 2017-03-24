@@ -45,7 +45,10 @@ namespace Devices.Components
         {
             string component = data.ResolveParameter(nameof(MessageContainer.FixedPropertyNames.Target), 0);
             if (string.IsNullOrEmpty(component))
+            {
+                Debug.WriteLine("No target component specified. Assuming malicous packet. Exiting application.");
                 throw new ArgumentNullException("No target component specified.");
+            }
             ComponentBase instance = GetByName(component);
 
             if (null == instance)

@@ -125,8 +125,7 @@ namespace Devices.Controllers.Common
         {
             JsonObject imageCapture = new JsonObject();
             imageCapture.AddValue("Action", "Capture");
-            await ControllerHandler.Send(this, imageCapture).ConfigureAwait(false);
-
+            await Send(imageCapture).ConfigureAwait(false);
         }
 
         public async Task RequestSupportedFormats(string type = null, string subType = null)
@@ -138,14 +137,14 @@ namespace Devices.Controllers.Common
             if (!string.IsNullOrEmpty(subType))
                 imageCapture.AddValue("SubType", subType);
 
-            await ControllerHandler.Send(this, imageCapture).ConfigureAwait(false);
+            await Send(imageCapture).ConfigureAwait(false);
         }
 
         public async Task RequestCurrentFormat()
         {
             JsonObject imageCapture = new JsonObject();
             imageCapture.AddValue("Action", "GetCurrentFormat");
-            await ControllerHandler.Send(this, imageCapture).ConfigureAwait(false);
+            await Send(imageCapture).ConfigureAwait(false);
         }
 
         public async Task SetCaptureFormat(ImageFormat imageFormat)
@@ -157,7 +156,7 @@ namespace Devices.Controllers.Common
             imageFormatJson.AddValue("Height", imageFormat.Height);
             imageFormatJson.AddValue("BitRate", imageFormat.JsonFormat.GetNamedNumber("Bitrate"));
 
-            await ControllerHandler.Send(this, imageFormatJson).ConfigureAwait(false);
+            await Send(imageFormatJson).ConfigureAwait(false);
             currentImageFormat = imageFormat;
         }
 

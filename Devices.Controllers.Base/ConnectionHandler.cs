@@ -56,30 +56,6 @@ namespace Devices.Controllers.Base
             }
         }
 
-        public async Task Send(ControllerBase sender, JsonObject data)
-        {
-            data.AddValue(nameof(FixedNames.Sender), sender.controllerName);
-            data.AddValue(nameof(FixedNames.Target), sender.targetComponentName);
-            OnJsonDataSend?.Invoke(sender, data);
-            if (socketClient.ConnectionStatus == ConnectionStatus.Connected)
-            {
-                await socketClient.Send(Guid.Empty, data).ConfigureAwait(false);
-            }
-        }
-
-        public async Task Send(ControllerBase sender, string action)
-        {
-            JsonObject data = new JsonObject();
-            data.AddValue(nameof(FixedNames.Action), action);
-            await Send(sender, data).ConfigureAwait(false);
-        }
-
-        public async Task Send(string sender, JsonObject data)
-        {
-            data.AddValue(nameof(FixedNames.Sender), sender);
-            await Send(data).ConfigureAwait(false);
-        }
-
         public async Task Send(JsonObject data)
         {
             OnJsonDataSend?.Invoke(this, data);

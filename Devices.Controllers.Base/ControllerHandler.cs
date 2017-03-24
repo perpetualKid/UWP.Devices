@@ -11,7 +11,6 @@ namespace Devices.Controllers.Base
     public static class ControllerHandler
     {
         internal static Dictionary<string, ControllerBase> registeredControllers = new Dictionary<string, ControllerBase>();
-        private static Dictionary<string, ControllerActionDelegate> catchAllActions = new Dictionary<string, ControllerActionDelegate>();
 
         internal static event EventHandler OnConnectionUpdated;
         private static ConnectionHandler connection;
@@ -36,8 +35,6 @@ namespace Devices.Controllers.Base
             {
                 registeredControllers.Remove(controller.ControllerName);
             }
-            if (catchAllActions.ContainsKey(controller.ControllerName))
-                catchAllActions.Remove(controller.ControllerName);
             return Task.CompletedTask;
         }
 
@@ -52,14 +49,15 @@ namespace Devices.Controllers.Base
         internal static async Task HandleInput(JsonObject data)
         {
             List<Task> actions = new List<Task>();
-            foreach (ControllerActionDelegate actionHandler in catchAllActions.Values)
-                actions.Add(actionHandler.Invoke(data));
 
             string sender = (data.ContainsKey(nameof(FixedNames.Sender)) ? data.GetNamedString(nameof(FixedNames.Sender)) : string.Empty).ToUpperInvariant();
             string action = (data.ContainsKey(nameof(FixedNames.Action)) ? data.GetNamedString(nameof(FixedNames.Action)) : string.Empty).ToUpperInvariant();
+
             if (registeredControllers.ContainsKey(sender))
             {
                 ControllerBase targetController = registeredControllers[sender];
+                if (targetController.actionHandlers.ContainsKey(string.Empty))
+                    actions.Add(targetController.actionHandlers[string.Empty].Invoke(data));
                 if (targetController.actionHandlers.ContainsKey(action))
                     actions.Add(targetController.actionHandlers[action].Invoke(data));
             }
@@ -78,9 +76,9 @@ namespace Devices.Controllers.Base
 
                     foreach (TargetActionAttribute actionAttribute in targetAttributes)
                     {
-                        if (actionAttribute.Actions == null || actionAttribute.Actions.Count() == 0) //catch all from certain target component
+                        if (actionAttribute.Actions == null || actionAttribute.Actions.Count() == 0) //catch all for that target component
                         {
-                            catchAllActions.Add(instance.controllerName.ToUpperInvariant(), actionHandler);
+                            instance.actionHandlers.Add(string.Empty, actionHandler);
                         }
                         else //catch dedicated target/method(s)
                         { 
@@ -133,26 +131,6 @@ namespace Devices.Controllers.Base
         }
 
         public static event EventHandler<ConnectionStatusChangedEventArgs> OnConnectionStatusChanged;
-
-        public static async Task Send(ControllerBase sender, JsonObject data)
-        {
-            await Connection.Send(sender, data).ConfigureAwait(false);
-        }
-
-        public static async Task Send(JsonObject data)
-        {
-            await Connection.Send(data).ConfigureAwait(false);
-        }
-
-        public static async Task Send(ControllerBase sender, string action)
-        {
-            await Connection.Send(sender, action).ConfigureAwait(false);
-        }
-
-        public static async Task Send(string sender, JsonObject data)
-        {
-            await Connection.Send(sender, data).ConfigureAwait(false);
-        }
 
         #endregion
 
