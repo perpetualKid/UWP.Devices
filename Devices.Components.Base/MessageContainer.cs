@@ -78,6 +78,21 @@ namespace Devices.Components
             dataObject.Add(nameof(FixedPropertyNames.Parameters), parameters.JsonArray);
         }
 
+        public MessageContainer(Guid sessionId, ComponentBase origin, JsonObject data) : this(sessionId, origin)
+        {
+            this.dataObject = data;
+            if (data.ContainsKey(nameof(FixedPropertyNames.Parameters)))
+            {
+                parameters = new StringJsonCollection(data.GetNamedArray(nameof(FixedPropertyNames.Parameters)));
+            }
+            else
+            {
+                parameters = new StringJsonCollection();
+                dataObject.Add(nameof(FixedPropertyNames.Parameters), parameters.JsonArray);
+            }
+        }
+        #endregion
+
         private string[] ResolveParameters(string[] data)
         {
             List<string> result = new List<string>();
@@ -105,20 +120,13 @@ namespace Devices.Components
             return result.ToArray();
         }
 
-        public MessageContainer(Guid sessionId, ComponentBase origin, JsonObject data) : this(sessionId, origin)
+        public MessageContainer Clone()
         {
-            this.dataObject = data;
-            if (data.ContainsKey(nameof(FixedPropertyNames.Parameters)))
-            {
-                parameters = new StringJsonCollection(data.GetNamedArray(nameof(FixedPropertyNames.Parameters)));
-            }
-            else
-            {
-                parameters = new StringJsonCollection();
-                dataObject.Add(nameof(FixedPropertyNames.Parameters), parameters.JsonArray);
-            }
+            MessageContainer result = new MessageContainer(this.SessionId, this.Origin);
+            result.dataObject = JsonObject.Parse(this.dataObject.Stringify());
+            result.parameters = new StringJsonCollection(this.parameters);
+            return result;
         }
-        #endregion
 
         public JsonObject GetJson()
         {

@@ -64,7 +64,7 @@ namespace Devices.Communication.Channels
                     this.ConnectionStatus = ConnectionStatus.Connected;
 
                     //Send a Hello message across
-                    await Parse("Hello" + Environment.NewLine).ConfigureAwait(false);
+//                    await Parse("Hello" + Environment.NewLine).ConfigureAwait(false);
 
                     loadOperation = dataReader.LoadAsync(bufferSize);
                     uint bytesAvailable = await loadOperation.AsTask(cancellationToken).ConfigureAwait(false);
@@ -103,7 +103,7 @@ namespace Devices.Communication.Channels
             this.OnMessageReceived -= socketObject.Instance_OnMessageReceived;
         }
 
-        private async Task Parse(string data)
+        internal async Task Parse(string data)
         {
             string[] message = data.GetTokens().ToArray();
             if (message.Length > 0)

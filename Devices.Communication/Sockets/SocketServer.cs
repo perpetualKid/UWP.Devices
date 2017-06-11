@@ -65,6 +65,7 @@ namespace Devices.Communication.Sockets
                 {
                     ChannelBase channel = await ChannelFactory.BindChannelAsync(dataFormat, this, streamSocketListenerConnectionReceivedEventArgs.Socket).ConfigureAwait(false);
                     activeSessions.Add(channel.SessionId, channel);
+                    await channel.Parse("Hello" + Environment.NewLine).ConfigureAwait(false);
                 };
                 await socketListener.BindServiceNameAsync(port.ToString()).AsTask().ConfigureAwait(false);
                 this.ConnectionStatus = ConnectionStatus.Listening;
