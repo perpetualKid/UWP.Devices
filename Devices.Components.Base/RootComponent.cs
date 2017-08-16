@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Windows.System;
 
 namespace Devices.Components
 {
@@ -66,6 +67,28 @@ namespace Devices.Components
                 await CloseChannel(data.Origin as CommunicationComponentBase, data.SessionId).ConfigureAwait(false);
         }
 
+        [Action("Shutdown")]
+        [ActionParameter("Restart", ParameterType = typeof(bool), Required = false)]
+        [ActionParameter("Timeout", ParameterType = typeof(int), Required = false)]
+        [ActionHelp("Shutting down the system. Once shut down, need to manually restart the system")]
+        private async Task Shutdown(MessageContainer data)
+        {
+            bool restart;
+            int timeout;
+            bool.TryParse(data.ResolveParameter("Restart", 0), out restart);
+            if (!int.TryParse(data.ResolveParameter("Timeout", 0), out timeout))
+                timeout = 10;
+            if (restart)
+                data.AddValue("Restart", $"Restarting the system in {timeout}sec. We will be back online in a moment.");
+            else
+                data.AddValue("Shutdown", $"Shutting down the system in {timeout}sec. Hope to be back soon again.");
+            await ComponentHandler.HandleOutput(data).ConfigureAwait(false);
+
+            if (data.Origin is CommunicationComponentBase)
+                await CloseChannel(data.Origin as CommunicationComponentBase, data.SessionId).ConfigureAwait(false);
+            await Shutdown(restart, timeout);
+        }
+
         public static Task<IList<string>> ListComponents()
         {
             return Task.FromResult<IList<string>>(ComponentHandler.registeredComponents.Keys.ToList());
@@ -74,6 +97,12 @@ namespace Devices.Components
         public static async Task CloseChannel(CommunicationComponentBase channel, Guid sessionId)
         {
             await channel.CloseChannel(sessionId).ConfigureAwait(false);
+        }
+
+        public static Task Shutdown(bool restart, int timeout)
+        {
+            ShutdownManager.BeginShutdown(restart ? ShutdownKind.Restart : ShutdownKind.Shutdown, TimeSpan.FromSeconds(timeout));
+            return Task.CompletedTask;
         }
 
     }
