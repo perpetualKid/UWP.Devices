@@ -35,7 +35,7 @@ namespace Devices.Communication.Sockets
             catch (Exception exception)
             {
                 ConnectionStatus = ConnectionStatus.Failed;
-                Debug.WriteLine(string.Format("Error receiving data: {0}", exception.Message));
+                Debug.WriteLine($"Error receiving data: {exception.Message}");
             }
             return channel;
         }

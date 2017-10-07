@@ -21,7 +21,7 @@ namespace Devices.Util.Collections
         public void AddRange(IEnumerable<T> list)
         {
             if (list == null)
-                throw new ArgumentNullException("list");
+                throw new ArgumentNullException(nameof(list));
 
             SuppressNotification = true;
 

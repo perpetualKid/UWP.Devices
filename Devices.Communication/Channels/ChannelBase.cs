@@ -96,7 +96,7 @@ namespace Devices.Communication.Channels
             catch (Exception exception)
             {
                 socketObject.ConnectionStatus = ConnectionStatus.Failed;
-                Debug.WriteLine(string.Format("Error receiving data: {0}", exception.Message));
+                Debug.WriteLine($"Error receiving data: {exception.Message}");
             }
             await socketObject.CloseSession(this.sessionId).ConfigureAwait(false);
             this.ConnectionStatus = ConnectionStatus.Disconnected;

@@ -116,6 +116,12 @@
     <Compile Include="Parser\TextStreamParser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StringJsonCollection.cs" />
+    <Compile Include="Timers\BaseTimerWheel.cs" />
+    <Compile Include="Timers\CascadingWheelTimer.cs" />
+    <Compile Include="Timers\TimerActionDelegate.cs" />
+    <Compile Include="Timers\TimerItem.cs" />
+    <Compile Include="Timers\TimerSector.cs" />
+    <Compile Include="Timers\TimerWheel.cs" />
     <EmbeddedResource Include="Properties\Devices.Util.rd.xml" />
   </ItemGroup>
   <ItemGroup />
