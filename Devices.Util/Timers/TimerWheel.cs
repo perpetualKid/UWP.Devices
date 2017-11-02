@@ -20,6 +20,8 @@ namespace Devices.Util.Timers
         private TimerWheel<T> carryOverWheel;
         protected readonly int baseInterval = 1000; // Default tick interval of 1000ms
 
+        protected Dictionary<Guid, TimerItem<T>> timerItems;
+
         public TimerWheel(int wheelSize, int baseInterval, int rank)
         {
             if (wheelSize < 2)
@@ -67,17 +69,42 @@ namespace Devices.Util.Timers
         public async Task AddItem(TimerItem<T> item)
         {
             await this.AddItem(1, item);
+            this.timerItems.Add(item.TimerItemId, item);
         }
 
         public async Task AddItem(DateTime startTime, TimerItem<T> item)
         {
             TimeSpan initialInterval = startTime.Subtract(DateTime.UtcNow);
             await this.AddInitialTime(initialInterval, item);
+            this.timerItems.Add(item.TimerItemId, item);
         }
 
         public async Task AddItem(TimeSpan initialInterval, TimerItem<T> item)
         {
             await this.AddInitialTime(initialInterval, item);
+            this.timerItems.Add(item.TimerItemId, item);
+        }
+
+        public async Task Clear()
+        {
+            await sectorHandling.WaitAsync().ConfigureAwait(false);
+            ClearItems();
+            sectorHandling.Release();
+            timerItems.Clear();
+        }
+
+        public async Task<bool> RemoveTimerItem(Guid timerItemId)
+        {
+            if (timerItems.ContainsKey(timerItemId))
+            {
+                TimerItem<T> item = timerItems[timerItemId];
+                timerItems.Remove(timerItemId);
+                await sectorHandling.WaitAsync().ConfigureAwait(false);
+                RemoveItem(item);
+                sectorHandling.Release();
+                return true;
+            }
+            return false;
         }
 
         private async Task CarryOver()
@@ -134,6 +161,28 @@ namespace Devices.Util.Timers
                 item.ExecutionTick = nextTickTime % this.sectorSpan;
                 //timerWheels.ForEach(x => { System.Diagnostics.Debug.Write($"{x.Magnitude}:{x.CurrentTick} "); });
                 await this.AddItem((int)(nextTickTime / this.sectorSpan), item);
+            }
+        }
+
+        private void ClearItems()
+        {
+            if (this.carryOverWheel != null)
+            {
+                this.carryOverWheel.ClearItems();
+                this.carryOverWheel = null;
+            }
+            foreach (TimerSector<T> sector in this.sectors)
+            {
+                sector?.Items?.Clear();
+            }
+        }
+        private void RemoveItem(TimerItem<T> item)
+        {
+            if (null != carryOverWheel)
+                carryOverWheel.RemoveItem(item);
+            foreach (var sector in this.sectors)
+            {
+                sector?.Items?.Remove(item);
             }
         }
 

@@ -22,10 +22,11 @@ namespace Devices.Components
 
         public static async Task<ComponentBase> RegisterComponent(ComponentBase component)
         {
+            //TODO: add (error) handling if component with same name already exists
             List<Task> registerTasks = new List<Task>();
             registeredComponents.Add(component.ResolveName(), component);
             registerTasks.Add(component.InitializeDefaults());
-            registerTasks.Add(Task.Run(()=> SetupCommandHandler(component)));
+            registerTasks.Add(Task.Run(() => SetupCommandHandler(component)));
             if (component is CommunicationComponentBase)
                 communicationComponents.Add(component as CommunicationComponentBase);
             await Task.WhenAll(registerTasks.ToArray()).ConfigureAwait(false);
@@ -43,10 +44,35 @@ namespace Devices.Components
         #region commmand processing
         public static async Task HandleInput(MessageContainer data)
         {
+            ComponentActionDelegate actionHandler = ResolveCommandHandler(data);
+
+            if (null != actionHandler)
+            {
+                await ExecuteCommand(actionHandler, data).ConfigureAwait(false);
+            }
+        }
+
+        public static async Task ExecuteCommand(ComponentActionDelegate actionHandler, MessageContainer data)
+        {
+            try
+            {
+                await (actionHandler?.Invoke(data)).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(data.Target, ex.Message + "::" + ex.StackTrace);
+                data.AddValue("Error", ex.Message);
+                data.AddValue("StackTrace", ex.StackTrace);
+                await HandleOutput(data).ConfigureAwait(false);
+            }
+        }
+
+        public static ComponentActionDelegate ResolveCommandHandler(MessageContainer data)
+        {
             string component = data.ResolveParameter(nameof(MessageContainer.FixedPropertyNames.Target), 0);
             if (string.IsNullOrEmpty(component))
             {
-                Debug.WriteLine("No target component specified. Assuming malicous packet. Exiting application.");
+                Debug.WriteLine("No target component specified. Assuming malicous packet. Exiting request pipeline.");
                 throw new ArgumentNullException("No target component specified.");
             }
             ComponentBase instance = GetByName(component);
@@ -63,26 +89,17 @@ namespace Devices.Components
                 string action = data.ResolveParameter(nameof(MessageContainer.FixedPropertyNames.Action), 1).ToUpperInvariant();
                 ComponentActionDelegate actionHandler;
                 if (instance.commandHandlers.TryGetValue(action, out actionHandler))
-                    try
-                    {
-                        await (actionHandler?.Invoke(data)).ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine(data.Target, ex.Message + "::" + ex.StackTrace);
-                        data.AddValue("Error", ex.Message);
-                        data.AddValue("StackTrace", ex.StackTrace);
-                        await HandleOutput(data).ConfigureAwait(false);
-                    }
+                {
+                    return actionHandler;
+                }
                 else
                 {
                     Debug.WriteLine($"{component} :: No handler found do for '{action}'");
+                    return null;
                 }
             }
-            else
-            {
-                Debug.WriteLine($"{component} :: Component not found ");
-            }
+            Debug.WriteLine($"{component} :: Component not found ");
+            return null;
         }
 
         public static async Task HandleOutput(MessageContainer data)

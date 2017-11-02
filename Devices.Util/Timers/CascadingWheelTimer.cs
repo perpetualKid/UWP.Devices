@@ -34,5 +34,21 @@ namespace Devices.Util.Timers
         {
             baseTimer.Stop();
         }
+
+        public TimerItem<T>[] GetActiveTimerItems()
+        {
+            return baseTimer.GetActiveTimers().ToArray();
+        }
+
+        public async Task<bool> RemoveTimerItem(Guid timerItemId)
+        {
+            bool result = await baseTimer.RemoveTimerItem(timerItemId).ConfigureAwait(false);
+            return result;
+        }
+
+        public async Task Clear()
+        {
+            await baseTimer.Clear().ConfigureAwait(false);
+        }
     }
 }

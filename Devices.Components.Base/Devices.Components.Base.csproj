@@ -115,6 +115,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RootComponent.cs" />
     <Compile Include="StorageComponentBase.cs" />
+    <Compile Include="TimerComponent.cs" />
     <EmbeddedResource Include="Properties\Devices.Components.Base.rd.xml" />
   </ItemGroup>
   <ItemGroup>

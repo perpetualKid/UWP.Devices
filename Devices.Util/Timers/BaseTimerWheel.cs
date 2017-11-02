@@ -19,6 +19,7 @@ namespace Devices.Util.Timers
             if (interval < 20)
                 throw new ArgumentOutOfRangeException(nameof(interval));
             this.timer = new Timer(TimerEvent, null, Timeout.Infinite, Timeout.Infinite);
+            this.timerItems = new Dictionary<Guid, TimerItem<T>>();
         }
         #endregion
 
@@ -35,6 +36,10 @@ namespace Devices.Util.Timers
                     {
                         item.ExecutionTick = 0;
                         await this.AddOverflow(item).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        timerItems.Remove(item.TimerItemId);
                     }
                 }
                 sector.Items.ForEach(item => item.TimerAction.Invoke(item));
@@ -58,6 +63,11 @@ namespace Devices.Util.Timers
         public virtual void Stop()
         {
             timer.Change(Timeout.Infinite, Timeout.Infinite);
+        }
+
+        public List<TimerItem<T>> GetActiveTimers()
+        {
+            return base.timerItems.Values.ToList();
         }
 
         #region IDisposable

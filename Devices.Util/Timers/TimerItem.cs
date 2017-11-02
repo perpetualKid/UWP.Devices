@@ -18,5 +18,7 @@ namespace Devices.Util.Timers
 
         internal int ExecutionTick { get; set; }
 
+        public Guid TimerItemId { get; private set; } = Guid.NewGuid();
+
     }
 }
