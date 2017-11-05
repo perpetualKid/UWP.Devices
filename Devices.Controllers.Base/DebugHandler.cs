@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Devices.Controllers.Base;
 using Windows.Data.Json;
+using Devices.Util.Extensions;
 
 namespace Devices.Controllers.Base
 {
@@ -72,13 +73,15 @@ namespace Devices.Controllers.Base
 
         private void Connection_OnJsonDataSend(object sender, JsonObject e)
         {
-            dataSent.Insert(0, e.Stringify() + Environment.NewLine);
+//            dataSent.Insert(0, e.Stringify() + Environment.NewLine);
+            dataSent.Insert(0, e.PrettyPrint() + Environment.NewLine);
             OnDataSent?.Invoke(this, new EventArgs());
         }
 
         private void Connection_OnJsonDataReceived(object sender, JsonObject e)
         {
-            dataReceived.Insert(0, e.Stringify() + Environment.NewLine);
+//            dataReceived.Insert(0, e.Stringify() + Environment.NewLine);
+            dataReceived.Insert(0, e.PrettyPrint() + Environment.NewLine);
             OnDataReceived?.Invoke(this, new EventArgs());
         }
 
