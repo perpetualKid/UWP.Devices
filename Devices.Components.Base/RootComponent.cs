@@ -73,20 +73,20 @@ namespace Devices.Components
         [ActionHelp("Shutting down the system. Once shut down, need to manually restart the system")]
         private async Task Shutdown(MessageContainer data)
         {
-            bool restart;
-            int timeout;
-            bool.TryParse(data.ResolveParameter("Restart", 0), out restart);
-            if (!int.TryParse(data.ResolveParameter("Timeout", 0), out timeout))
+            bool.TryParse(data.ResolveParameter("Restart", 0), out bool restart);
+            if (!int.TryParse(data.ResolveParameter("Timeout", 1), out int timeout))
                 timeout = 10;
             if (restart)
                 data.AddValue("Restart", $"Restarting the system in {timeout}sec. We will be back online in a moment.");
             else
                 data.AddValue("Shutdown", $"Shutting down the system in {timeout}sec. Hope to be back soon again.");
+
+            await Shutdown(restart, timeout);
+
             await ComponentHandler.HandleOutput(data).ConfigureAwait(false);
 
             if (data.Origin is CommunicationComponentBase)
                 await CloseChannel(data.Origin as CommunicationComponentBase, data.SessionId).ConfigureAwait(false);
-            await Shutdown(restart, timeout);
         }
 
         public static Task<IList<string>> ListComponents()
